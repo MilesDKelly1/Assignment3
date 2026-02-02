@@ -1,0 +1,25 @@
+name: C++ Unit Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Compiler
+        run: sudo apt-get update && sudo apt-get install -y g++
+
+      - name: Compile with Doctest
+        # Note the -D_DEBUG flag to enable your test cases
+        run: g++ -std=c++17 -D_DEBUG main.cpp -o test_runner
+
+      - name: Run Tests
+        run: ./test_runner
