@@ -19,7 +19,7 @@ jobs:
 
       - name: Compile with Doctest
         # Note the -D_DEBUG flag to enable your test cases
-        run: g++ -std=c++17 -D_DEBUG Assignment3.cpp -o test_runner
+        run: g++ -std=c++17 -D_DEBUG assignment3.cpp -o test_runner
 
       - name: Run Tests
         run: ./test_runner
