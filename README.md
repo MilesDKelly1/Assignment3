@@ -1,7 +1,7 @@
 Badge for assignment3:
 [![C++ Unit Tests](https://github.com/MilesDKelly1/Assignment3/actions/workflows/cpp-test.yml/badge.svg)](https://github.com/MilesDKelly1/Assignment3/actions/workflows/cpp-test.yml)
 
-Badge for assignment4:
+Badge for assignment4: [![C++ Unit Tests](https://github.com/MilesDKelly1/Assignment3/actions/workflows/cpp-test.yml/badge.svg?branch=A4&event=push)](https://github.com/MilesDKelly1/Assignment3/actions/workflows/cpp-test.yml)
 
 
 # Assignment1
