@@ -1,3 +1,13 @@
 [![C++ Unit Tests](https://github.com/MilesDKelly1/Assignment3/actions/workflows/cpp-test.yml/badge.svg)](https://github.com/MilesDKelly1/Assignment3/actions/workflows/cpp-test.yml)
+
+# Assignment1
+guess I will follow this and then figure out how to do a video? Making structs and enums to fit my program idea of a Dojo
+
+# Assignment2
+Change that struct to a class right now! so fun have to rewrite everything...yay
+
 # Assignment3
-github work please
+github work please show my badge please - entry Assignment 3
+
+# Assignment4
+oh no we are messing with Classes. I dont like Test_Cases. Guess this textbook will be my friend by the end of this
