@@ -1,4 +1,8 @@
+Badge for assignment3:
 [![C++ Unit Tests](https://github.com/MilesDKelly1/Assignment3/actions/workflows/cpp-test.yml/badge.svg)](https://github.com/MilesDKelly1/Assignment3/actions/workflows/cpp-test.yml)
+
+Badge for assignment4:
+
 
 # Assignment1
 guess I will follow this and then figure out how to do a video? Making structs and enums to fit my program idea of a Dojo
