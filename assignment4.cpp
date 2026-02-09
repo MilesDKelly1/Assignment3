@@ -90,6 +90,8 @@ public:
         : Participant(n, m, r), guardianName(g), finance(80.0, gear ? 125.0 : 0.0) {
     }
 
+    string getGuardianName() const { return guardianName; }
+
     // Overriding print() - Calls Base version
     void print(ostream& out) const override {
         out << "[JUNIOR STUDENT RECORD]\n";
@@ -131,7 +133,7 @@ TEST_CASE("System Verification") {
         JuniorStudent y("Timmy", 12, Yellow, "Jane Doe", true);
         CHECK(y.getName() == "Timmy");
         CHECK(y.getMonths() == 12);
-        CHECK(y.guardianName == "Jane Doe"); // Direct access for test (requires friend or making it public for test)
+        CHECK(y.getGuardianName == "Jane Doe"); // Direct access for test (requires friend or making it public for test)
     }
     SUBCASE("Default Constructors") {
         SeniorStudent a;
