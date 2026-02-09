@@ -14,4 +14,4 @@ Change that struct to a class right now! so fun have to rewrite everything...yay
 github work please show my badge please - entry Assignment 3
 
 # Assignment4
-oh no we are messing with Classes. I dont like Test_Cases. Guess this textbook will be my friend by the end of this
+oh no we are messing with Classes. I dont like Test_Cases. Guess this textbook will be my friend by the end of this. Remember that you have all the methods made for your TEST_CASE, orginally had y.guardainName when that doesnt work due to guardainName is a private variable in JuniorStudent. So I fixed this by making a method that passes the name around. Had everything else looking fine.
