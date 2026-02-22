@@ -20,3 +20,10 @@ oh no we are messing with Classes. I dont like Test_Cases. Guess this textbook w
 -Read over Chapter 12
 -Made sure to keep a similar style for my TEST_CASES and Week 4 Program
 -Verified that I had all the changes I need for this assignment
+
+# Assignment6
+-Read over Chapter 13
+-Feel comfortable for Chap 13 quiz
+-Verify that the code made on 2/22 is what I want to submit
+-Read over Assignment 6 again if needed
+-Record
