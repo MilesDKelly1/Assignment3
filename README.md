@@ -32,4 +32,6 @@ oh no we are messing with Classes. I dont like Test_Cases. Guess this textbook w
 
 -Read over Assignment 6 again if needed
 
+-Did need to reread Assignment 6, updated code to work correctly, and now matches the requirements
+
 -Record
