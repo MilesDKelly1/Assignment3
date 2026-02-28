@@ -2,11 +2,10 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
-#include <ctime>
-#include <sstream>
+#include <vector>
 
 // To run tests: Define _DEBUG. To run program: Comment it out.
-//#define _DEBUG 
+#define _DEBUG 
 
 #ifdef _DEBUG
 #define DOCTEST_CONFIG_IMPLEMENT
@@ -15,67 +14,10 @@
 
 using namespace std;
 
+// --- Requirement: Week 01 Enum ---
 enum BeltRank { White, Yellow, Green, Blue, Purple, Brown, Black };
 
-// --- REQUIREMENT D: THE STUDENT CLASS ---
-class Student {
-private:
-    string name;
-    int age;
-    string startDate;
-    int monthsEnrolled;
-    BeltRank rank;
-    double baseRate;
-    bool needsGear;
-
-    static const int youthAgeThreshold = 16;
-    static constexpr double youthClassPayment = 80.0;
-    static constexpr double adultClassPayment = 120.0;
-    static constexpr double gearBundleCost = 125.00;
-    static constexpr double taxRate = 0.06;
-    static constexpr int minAge = 6;
-
-public:
-    Student() : name("N/A"), age(0), startDate("01/24/2026"), monthsEnrolled(0), rank(White), needsGear(false) {
-        baseRate = 100.0;
-    }
-
-    // Setters (Includes Calculation 1 & Guard Case)
-    void setAge(int a) {
-        age = (a < 0) ? 0 : a; // Guard against negative
-        baseRate = (age < youthAgeThreshold) ? youthClassPayment : adultClassPayment; // Calculation 1
-    }
-    void setName(string n) { name = n; }
-    void setStartDate(string d) { startDate = d; }
-    void setMonths(int m) { monthsEnrolled = (m < 0) ? 0 : m; }
-    void setRank(BeltRank r) { rank = r; }
-    void setGearStatus(bool status) { needsGear = status; }
-
-    // Getters for the File Output
-    string getName() const { return name; }
-    int getAge() const { return age; }
-    string getStartDate() const { return startDate; }
-    int getMonths() const { return monthsEnrolled; }
-    BeltRank getRank() const { return rank; }
-    bool getGearStatus() const { return needsGear; }
-
-    // --- REQUIREMENT D: Class Methods (Calculations 2, 3, 4) ---
-    double getEquipmentCost() const {
-        if (!needsGear) return 0.0;
-        // Bundle: Hoodie ($35.00) + Sparring Set ($90.00) = $125.00
-        return gearBundleCost;
-    } //Calc 2
-    double getSalesTax() const {
-        return (baseRate + getEquipmentCost()) * taxRate;
-    } //Calc 3
-    double getTotalBill() const {
-        return baseRate + getEquipmentCost() + getSalesTax();
-    } //Calc 4
-
-    bool isValidForTraining() const { return age >= minAge; } // Guard Case
-};
-
-// Global helper for Requirement B
+// Global helper for Rank Names
 string getRankName(BeltRank r) {
     switch (r) {
     case White: return "White"; case Yellow: return "Yellow";
@@ -85,167 +27,184 @@ string getRankName(BeltRank r) {
     }
 }
 
-// REQUIREMENT C: Array Processing
-int countStudentsByRank(const Student students[], int size, BeltRank targetRank) {
-    if (size <= 0) return 0; // Guard case
-    int count = 0;
-    for (int i = 0; i < size; i++) {
-        if (students[i].getRank() == targetRank) count++;
-    }
-    return count;
-}
+// --- REQUIREMENT: COMPOSITION CLASS ---
+class FinancialRecord {
+private:
+    double baseRate;
+    double gearCost;
+    static constexpr double taxRate = 0.06;
 
+public:
+    FinancialRecord() : baseRate(0.0), gearCost(0.0) {}
+    FinancialRecord(double base, double gear) : baseRate(base), gearCost(gear) {}
+
+    // Getters/Setters
+    void setBaseRate(double b) { baseRate = b; }
+    void setGearCost(double g) { gearCost = g; }
+
+    // Helper Method
+    double calculateTotal() const {
+        return (baseRate + gearCost) * (1.0 + taxRate);
+    }
+};
+
+// --- REQUIREMENT: BASE CLASS ---
+class Participant {
+protected:
+    int monthsEnrolled; // Protected: derived classes need access
+private:
+    string name;
+    BeltRank rank;
+
+public:
+    Participant() : name("N/A"), monthsEnrolled(0), rank(White) {}
+    Participant(string n, int m, BeltRank r) : name(n), monthsEnrolled(m), rank(r) {}
+
+    virtual ~Participant() {}
+
+    // Getters/Setters
+    void setName(string n) { name = n; }
+    string getName() const { return name; }
+    void setMonths(int m) { monthsEnrolled = m; }
+    int getMonths() const { return monthsEnrolled; }
+    void setRank(BeltRank r) { rank = r; }
+    BeltRank getRank() const { return rank; }
+
+    // Requirement: print() that handles both console and file
+    virtual void print(ostream& out) const {
+        out << "Name: " << name << "\n"
+            << "Months: " << monthsEnrolled << "\n"
+            << "Rank: " << getRankName(rank) << "\n";
+    }
+};
+
+// --- REQUIREMENT: DERIVED CLASS 1 ---
+class JuniorStudent : public Participant {
+private:
+    string guardianName;
+    FinancialRecord finance; // Composition
+
+public:
+    JuniorStudent() : Participant(), guardianName("N/A"), finance(80.0, 0.0) {}
+    JuniorStudent(string n, int m, BeltRank r, string g, bool gear)
+        : Participant(n, m, r), guardianName(g), finance(80.0, gear ? 125.0 : 0.0) {
+    }
+
+    string getGuardianName() const { return guardianName; }
+
+    // Overriding print() - Calls Base version
+    void print(ostream& out) const override {
+        out << "[JUNIOR STUDENT RECORD]\n";
+        Participant::print(out); // Call Base version
+        out << "Guardian: " << guardianName << "\n"
+            << "Total Due (inc. tax): $" << fixed << setprecision(2) << finance.calculateTotal() << endl;
+    }
+};
+
+// --- REQUIREMENT: DERIVED CLASS 2 ---
+class SeniorStudent : public Participant {
+private:
+    string emergencyContact;
+    FinancialRecord finance; // Composition
+
+public:
+    SeniorStudent() : Participant(), emergencyContact("N/A"), finance(120.0, 0.0) {}
+    SeniorStudent(string n, int m, BeltRank r, string e, bool gear)
+        : Participant(n, m, r), emergencyContact(e), finance(120.0, gear ? 125.0 : 0.0) {
+    }
+
+    // Overriding print() - Calls Base version
+    void print(ostream& out) const override {
+        out << "[SENIOR STUDENT RECORD]\n";
+        Participant::print(out); // Call Base version
+        out << "Emergency Contact: " << emergencyContact << "\n"
+            << "Total Due (inc. tax): $" << fixed << setprecision(2) << finance.calculateTotal() << endl;
+    }
+};
+
+// --- DOCTEST UNIT TESTS ---
 #ifdef _DEBUG
-TEST_CASE("Dojo Management System Tests") {
-    Student s;
-
-    SUBCASE("A) Calculations") {
-        // Normal Cases
-
-        //Test Adult and gearNeeded
-        s.setGearStatus(true); // $125.00
-        s.setAge(20); // Test Adult Rate ($120.00)
-        // Total = (120 + 125) = 245. Tax = 245 * 0.06 = 14.70
-
-        CHECK(s.getSalesTax() == doctest::Approx(14.70));
-        CHECK(s.getTotalBill() == doctest::Approx(259.70));
-        
-        //Test Youth and no geadNeeded
-        s.setAge(10); // Test Youth Rate ($80.00)
-        s.setGearStatus(false);
-        // Total = 80. Tax = 80 * 0.06 = 4.80
-
-        CHECK(s.getSalesTax() == doctest::Approx(4.80));
-        CHECK(s.getTotalBill() == doctest::Approx(84.80));
-
-        // Edge Case - 0 Age (Boundary)
-        s.setAge(0);
-        CHECK(s.isValidForTraining() == false); // Guard case for minAge=6
-
-        // Guard Case - Negative Input Handling
-        s.setAge(-5);
-        CHECK(s.getAge() == 0); // Ensuring the setter clamps negative values
+TEST_CASE("System Verification") {
+    SUBCASE("Composition & Calculation") {
+        FinancialRecord f(100.0, 50.0); // 150 * 1.06 = 159.00
+        CHECK(f.calculateTotal() == doctest::Approx(159.00));
     }
-
-    SUBCASE("B) Enum Logic") {
-        CHECK(getRankName(White) == "White");
-        CHECK(getRankName(Black) == "Black");
-        CHECK(getRankName(static_cast<BeltRank>(99)) == "White"); // Guard
+    SUBCASE("Base/Derived Initialization") {
+        JuniorStudent y("Timmy", 12, Yellow, "Jane Doe", true);
+        CHECK(y.getName() == "Timmy");
+        CHECK(y.getMonths() == 12);
+        CHECK(y.getGuardianName == "Jane Doe"); // Direct access for test (requires friend or making it public for test)
     }
-
-    SUBCASE("C) Array Processing") {
-        Student school[3];
-        school[0].setRank(White);
-        school[1].setRank(Black);
-        school[2].setRank(Black);
-
-        CHECK(countStudentsByRank(school, 3, Black) == 2); // Normal
-        CHECK(countStudentsByRank(school, 3, Green) == 0); // Edge
-        CHECK(countStudentsByRank(school, 0, Black) == 0); // Guard
-    }
-
-    SUBCASE("D) Class Method Edge Cases") {
-        // Normal Case
-        s.setAge(16); // Adult
-        CHECK(s.getTotalBill() > 0);
-
-        // Edge Case (0 sessions/months)
-        s.setMonths(0);
-        CHECK(s.getMonths() == 0);
+    SUBCASE("Default Constructors") {
+        SeniorStudent a;
+        CHECK(a.getName() == "N/A");
     }
 }
 #endif
 
+// --- MAIN PROGRAM ---
 int main(int argc, char** argv) {
 #ifdef _DEBUG
     doctest::Context context;
     context.applyCommandLine(argc, argv);
-    return context.run(); // Runs tests and exits
-#else
-    Student currentStudent;
+    int res = context.run();
+    if (context.shouldExit()) return res;
+#endif
+
+    // Pointer to base class to allow for "Student" to be either Junior or Senior
+    Participant* currentStudent = nullptr;
     int choice;
-    bool dataEntered = false;
 
     do {
-        cout << "\n--- Dojo Management System (2026) ---" << endl;
-        cout << "1. Register/Add Student Information" << endl;
-        cout << "2. Generate and Save Record (File Output)" << endl;
-        cout << "3. Student Summary" << endl;
+        cout << "\n--- Dojo Management System 2.0 ---" << endl;
+        cout << "1. Register Junior Student" << endl;
+        cout << "2. Register Senior Student" << endl;
+        cout << "3. Save Record to File" << endl;
         cout << "4. Exit" << endl;
         cout << "Selection: ";
+        cin >> choice;
 
-        if (!(cin >> choice)) {
-            cout << "Invalid input. Exiting..." << endl;
-            break;
-        }
+        if (choice == 1 || choice == 2) {
+            string name, extra;
+            int months, rankIdx;
+            char gear;
 
-        switch (choice) {
-        case 1: {
-            string tName, tDate; char gearChoice;
-            int tAge;
-            cout << "First and Last Name: "; cin.ignore(); getline(cin, tName);
-            cout << "Age: "; cin >> tAge;
-            cout << "Start Date (MM/DD/YYYY): "; cin >> tDate;
-            // Show available ranks to the user
-            cout << "Available Ranks: ";
-            for (int i = White; i <= Black; i++) {
-                cout << "[" << i << "] " << getRankName(static_cast<BeltRank>(i)) << (i < Black ? ", " : "");
-            }
+            cout << "Name: "; cin.ignore(); getline(cin, name);
+            cout << "Months Enrolled: "; cin >> months;
+            cout << "Rank Index (0-White, 6-Black): "; cin >> rankIdx;
+            cout << "Add Gear Bundle? (y/n): "; cin >> gear;
 
-            int rankChoice;
-            cout << "\nSelect Rank (0-6): ";
-            cin >> rankChoice;
-            currentStudent.setRank(static_cast<BeltRank>(rankChoice));
-            cout << "Add Gear Bundle (Hoodie + Sparring Set for $125)? (y/n): "; cin >> gearChoice;
-
-            currentStudent.setName(tName);
-            currentStudent.setAge(tAge);
-            currentStudent.setStartDate(tDate);
-            currentStudent.setGearStatus(gearChoice == 'y' || gearChoice == 'Y');
-            dataEntered = true;
-            cout << "Information recorded successfully!" << endl;
-            break;
-        }
-        case 2: {
-            if (!dataEntered) {
-                cout << "Nothing to record yet." << endl;
+            if (choice == 1) {
+                cout << "Guardian Name: "; cin.ignore(); getline(cin, extra);
+                currentStudent = new JuniorStudent(name, months, (BeltRank)rankIdx, extra, (gear == 'y'));
             }
             else {
-                ofstream outFile("record.txt");
-                cout << "Saving Record for: " << currentStudent.getName() << endl;
-
-                outFile << "DOJO STUDENT RECORD 2026\n" << string(30, '=') << endl;
-                outFile << "Name: " << currentStudent.getName() << endl;
-                outFile << "Age: " << currentStudent.getAge() << endl;
-                outFile << "RANK: [" << getRankName(currentStudent.getRank()) << " Belt]" << endl;
-                outFile << "Gear Included: " << (currentStudent.getGearStatus() ? "Yes ($125.00)" : "No") << endl;
-                outFile << "Tax (6%): $" << fixed << setprecision(2) << currentStudent.getSalesTax() << endl;
-                outFile << "TOTAL DUE: $" << currentStudent.getTotalBill() << endl;
-                outFile.close();
-                cout << "Record saved to record.txt" << endl;
+                cout << "Emergency Contact: "; cin.ignore(); getline(cin, extra);
+                currentStudent = new SeniorStudent(name, months, (BeltRank)rankIdx, extra, (gear == 'y'));
             }
-            break;
+            cout << "Student added successfully!\n";
         }
-        case 3: { // Add a new case for "View Student Summary"
-            if (!dataEntered) {
-                cout << "No student data found." << endl;
+        else if (choice == 3) {
+            if (currentStudent == nullptr) {
+                cout << "No student data to save!" << endl;
             }
             else {
-                cout << "\n--- 2026 STUDENT STATUS ---" << endl;
-                cout << left << setw(15) << "Name:" << currentStudent.getName() << endl;
-                cout << left << setw(15) << "Current Rank:" << "[" << getRankName(currentStudent.getRank()) << "]" << endl;
-                cout << left << setw(15) << "Total Bill:" << "$" << fixed << setprecision(2) << currentStudent.getTotalBill() << endl;
-                cout << "---------------------------" << endl;
+                ofstream outFile("dojo_records.txt", ios::app);
+                if (outFile.is_open()) {
+                    // Logic: Passing the file stream to the print function
+                    currentStudent->print(outFile);
+                    outFile << "--------------------------\n";
+                    outFile.close();
+                    cout << "Record saved to dojo_records.txt" << endl;
+
+                    // Also show to console
+                    currentStudent->print(cout);
+                }
             }
-            break;
         }
-        case 4:
-            cout << "Exiting system..." << endl;
-            break;
-        default:
-            cout << "Invalid choice." << endl;
-        }
+
     } while (choice != 4);
-#endif
+
+    delete currentStudent; // Clean up memory
     return 0;
 }
