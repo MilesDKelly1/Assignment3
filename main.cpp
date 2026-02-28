@@ -1,11 +1,13 @@
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 
-// To run tests: Define _DEBUG. To run program: Comment it out.
-#define _DEBUG 
-
+#define _DEBUG
 #ifdef _DEBUG
 #define DOCTEST_CONFIG_IMPLEMENT
 #include "doctest.h"
@@ -15,61 +17,50 @@ using namespace std;
 
 // --- Week 01 Enum ---
 enum BeltRank { White, Yellow, Green, Blue, Purple, Brown, Black };
-
 string getRankName(BeltRank r) {
-    switch (r) {
-    case White: return "White"; case Yellow: return "Yellow";
-    case Green: return "Green"; case Blue: return "Blue";
-    case Purple: return "Purple"; case Brown: return "Brown";
-    case Black: return "Black"; default: return "White";
-    }
+    string names[] = { "White", "Yellow", "Green", "Blue", "Purple", "Brown", "Black" };
+    return (r >= 0 && r <= 6) ? names[r] : "White";
 }
 
-// --- Composition Class (Existing) ---
+// --- REQUIREMENT: Function Template ---
+template <typename T>
+T getMax(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+// --- Composition Class ---
 class FinancialRecord {
 private:
     double baseRate;
     double gearCost;
     static constexpr double taxRate = 0.06;
 public:
-    FinancialRecord() : baseRate(0.0), gearCost(0.0) {}
-    FinancialRecord(double base, double gear) : baseRate(base), gearCost(gear) {}
-    void setBaseRate(double b) { baseRate = b; }
-    void setGearCost(double g) { gearCost = g; }
-    double calculateTotal() const {
-        return (baseRate + gearCost) * (1.0 + taxRate);
-    }
+    FinancialRecord(double base = 0.0, double gear = 0.0) : baseRate(base), gearCost(gear) {}
+    double calculateTotal() const { return (baseRate + gearCost) * (1.0 + taxRate); }
 };
 
-// --- REQUIREMENT: ABSTRACT BASE CLASS ---
+// --- ABSTRACT BASE CLASS ---
 class Participant {
 protected:
     int monthsEnrolled;
-private:
     string name;
     BeltRank rank;
-
 public:
-    Participant() : name("N/A"), monthsEnrolled(0), rank(White) {}
-    Participant(string n, int m, BeltRank r) : name(n), monthsEnrolled(m), rank(r) {}
-
-    // Requirement: Virtual Destructor
+    Participant(string n = "N/A", int m = 0, BeltRank r = White) : name(n), monthsEnrolled(m), rank(r) {}
     virtual ~Participant() {}
-
-    // Requirement: Pure Virtual Function (Makes class abstract)
     virtual string getStudentType() const = 0;
-
-    void setName(string n) { name = n; }
+    
     string getName() const { return name; }
-    void setMonths(int m) { monthsEnrolled = m; }
-    int getMonths() const { return monthsEnrolled; }
-    void setRank(BeltRank r) { rank = r; }
     BeltRank getRank() const { return rank; }
 
-    // Requirement: Keep print() but make it virtual
+    // REQUIREMENT: Overload operator<< using polymorphism
+    friend ostream& operator<<(ostream& os, const Participant& p) {
+        p.print(os);
+        return os;
+    }
+
     virtual void print(ostream& out) const {
-        out << "Name: " << name << " | Months: " << monthsEnrolled
-            << " | Rank: " << getRankName(rank) << " | Type: " << getStudentType();
+        out << "Name: " << name << " | Type: " << getStudentType();
     }
 };
 
@@ -79,12 +70,16 @@ private:
     string guardianName;
     FinancialRecord finance;
 public:
-    JuniorStudent(string n, int m, BeltRank r, string g, bool gear)
-        : Participant(n, m, r), guardianName(g), finance(80.0, gear ? 125.0 : 0.0) {
-    }
+    JuniorStudent(string n, int m, BeltRank r, string g, bool gear) 
+        : Participant(n, m, r), guardianName(g), finance(80.0, gear ? 125.0 : 0.0) {}
 
-    // Requirement: Implement pure virtual
     string getStudentType() const override { return "Junior"; }
+
+    // REQUIREMENT: Overload operator== 
+    bool operator==(const JuniorStudent& other) const {
+        // REQUIREMENT: Explicit use of 'this'
+        return (this->name == other.name && this->guardianName == other.guardianName);
+    }
 
     void print(ostream& out) const override {
         Participant::print(out);
@@ -98,11 +93,9 @@ private:
     string emergencyContact;
     FinancialRecord finance;
 public:
-    SeniorStudent(string n, int m, BeltRank r, string e, bool gear)
-        : Participant(n, m, r), emergencyContact(e), finance(120.0, gear ? 125.0 : 0.0) {
-    }
+    SeniorStudent(string n, int m, BeltRank r, string e, bool gear) 
+        : Participant(n, m, r), emergencyContact(e), finance(120.0, gear ? 125.0 : 0.0) {}
 
-    // Requirement: Implement pure virtual
     string getStudentType() const override { return "Senior"; }
 
     void print(ostream& out) const override {
@@ -111,121 +104,105 @@ public:
     }
 };
 
-// --- REQUIREMENT: MANAGER CLASS (No STL) ---
-class DojoManager {
+// --- REQUIREMENT: CLASS TEMPLATE (Replaces DojoManager) ---
+template <typename T>
+class DynamicArray {
 private:
-    Participant** items; // Double pointer array
+    T* items;
     int size;
     int capacity;
 
     void resize() {
         capacity *= 2;
-        Participant** newItems = new Participant * [capacity];
+        T* newItems = new T[capacity];
         for (int i = 0; i < size; i++) newItems[i] = items[i];
         delete[] items;
-        items = newItems;
+        this->items = newItems; // REQUIREMENT: Use 'this'
     }
 
 public:
-    DojoManager(int cap = 2) : size(0), capacity(cap) {
-        items = new Participant * [capacity];
-    }
-
-    // Requirement: Safe memory cleanup
-    ~DojoManager() {
-        for (int i = 0; i < size; i++) delete items[i];
+    DynamicArray(int cap = 2) : size(0), capacity(cap) { items = new T[capacity]; }
+    
+    ~DynamicArray() {
+        for (int i = 0; i < size; i++) delete items[i]; // Cleanup for pointers
         delete[] items;
     }
 
-    void addParticipant(Participant* p) {
-        if (size >= capacity) resize();
-        items[size++] = p;
+    // REQUIREMENT: Overload operator[]
+    T& operator[](int index) {
+        if (index < 0 || index >= size) return items[0]; // Simple bounds safety
+        return items[index];
     }
 
-    void removeParticipant(int index) {
+    // REQUIREMENT: Overload operator+=
+    void operator+=(T item) {
+        if (size >= capacity) resize();
+        items[size++] = item;
+    }
+
+    // REQUIREMENT: Overload operator-=
+    void operator-=(int index) {
         if (index < 0 || index >= size) return;
         delete items[index];
         for (int i = index; i < size - 1; i++) items[i] = items[i + 1];
         size--;
     }
 
-    void printAll(ostream& out) const {
-        for (int i = 0; i < size; i++) {
-            items[i]->print(out); // Polymorphic print
-            out << endl;
-        }
-    }
-
     int getSize() const { return size; }
-    Participant* getAt(int index) const { return items[index]; }
 };
 
-
-// --- Updated Unit Tests ---
 #ifdef _DEBUG
-TEST_CASE("DojoManager Verification") {
-    DojoManager dm(1); // Force resize
-    dm.addParticipant(new JuniorStudent("Timmy", 1, White, "Jane", false));
-    dm.addParticipant(new SeniorStudent("Old Joe", 10, Black, "Contact", true));
-
-    SUBCASE("Dynamic Sizing & Addition") {
-        CHECK(dm.getSize() == 2);
+TEST_CASE("New Requirements Verification") {
+    DynamicArray<Participant*> da;
+    JuniorStudent* j1 = new JuniorStudent("Tim", 1, White, "Jane", false);
+    JuniorStudent* j2 = new JuniorStudent("Tim", 1, White, "Jane", false);
+    
+    SUBCASE("Operator==") { CHECK(*j1 == *j2); }
+    SUBCASE("Operator+=") { 
+        da += j1; 
+        CHECK(da.getSize() == 1); 
     }
-    SUBCASE("Polymorphism (Pure Virtual Test)") {
-        CHECK(dm.getAt(0)->getStudentType() == "Junior");
-        CHECK(dm.getAt(1)->getStudentType() == "Senior");
+    SUBCASE("Operator[]") {
+        da += j2;
+        CHECK(da[1]->getName() == "Tim");
     }
-    SUBCASE("Safe Deletion") {
-        dm.removeParticipant(0);
-        CHECK(dm.getSize() == 1);
-        CHECK(dm.getAt(0)->getName() == "Old Joe");
+    SUBCASE("Operator<<") {
+        ostringstream oss;
+        oss << *j1;
+        CHECK(oss.str().find("Tim") != string::npos);
     }
+    SUBCASE("Function Template") { CHECK(getMax(10, 20) == 20); }
 }
 #endif
 
-// --- Main Program ---
 int main(int argc, char** argv) {
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #ifdef _DEBUG
     doctest::Context context; context.applyCommandLine(argc, argv);
     int res = context.run(); if (context.shouldExit()) return res;
 #endif
 
-    DojoManager manager;
+    DynamicArray<Participant*> manager;
     int choice;
-
     do {
-        cout << "\n1. Register Junior\n2. Register Senior\n3. View All/Save\n4. Remove Student\n5. Exit\nSelection: ";
+        cout << "\n1. Add Junior\n2. Add Senior\n3. View\n4. Remove\n5. Exit\nSelection: ";
         cin >> choice;
-
         if (choice == 1 || choice == 2) {
-            string name, extra; int months, rank; char gear;
+            string name, extra; int m, r; char g;
             cout << "Name: "; cin.ignore(); getline(cin, name);
-            cout << "Months: "; cin >> months;
-            cout << "Rank (0-6): "; cin >> rank;
-            cout << "Gear? (y/n): "; cin >> gear;
-
+            cout << "Months: "; cin >> m; cout << "Rank (0-6): "; cin >> r; cout << "Gear (y/n): "; cin >> g;
             if (choice == 1) {
                 cout << "Guardian: "; cin.ignore(); getline(cin, extra);
-                manager.addParticipant(new JuniorStudent(name, months, (BeltRank)rank, extra, (gear == 'y')));
+                manager += new JuniorStudent(name, m, (BeltRank)r, extra, (g == 'y'));
+            } else {
+                cout << "Emergency: "; cin.ignore(); getline(cin, extra);
+                manager += new SeniorStudent(name, m, (BeltRank)r, extra, (g == 'y'));
             }
-            else {
-                cout << "Emergency Contact: "; cin.ignore(); getline(cin, extra);
-                manager.addParticipant(new SeniorStudent(name, months, (BeltRank)rank, extra, (gear == 'y')));
-            }
-        }
-        else if (choice == 3) {
-            manager.printAll(cout);
-            ofstream outFile("dojo_records.txt", ios::app);
-            if (outFile.is_open()) {
-                manager.printAll(outFile);
-                outFile.close();
-            }
-        }
-        else if (choice == 4) {
-            int idx;
-            cout << "Enter index to remove (0 to " << manager.getSize() - 1 << "): ";
-            cin >> idx;
-            manager.removeParticipant(idx);
+        } else if (choice == 3) {
+            for (int i = 0; i < manager.getSize(); i++) cout << "[" << i << "] " << *manager[i] << endl;
+        } else if (choice == 4) {
+            int idx; cout << "Index: "; cin >> idx;
+            manager -= idx;
         }
     } while (choice != 5);
 
